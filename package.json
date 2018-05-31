@@ -1,0 +1,25 @@
+{
+  "name": "pl-question-migration",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nwalters512/pl-question-migration.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nwalters512/pl-question-migration/issues"
+  },
+  "homepage": "https://github.com/nwalters512/pl-question-migration#readme",
+  "dependencies": {
+    "domutils": "^1.7.0",
+    "fs-extra": "^6.0.1",
+    "htmlparser2": "^3.9.2",
+    "yargs": "^11.0.0"
+  }
+}
