@@ -16,11 +16,26 @@ const replaceTags = (node, tagMap) => {
   return node;
 }
 
+/**
+ * Returns true if conversion occurred, false otherwise.
+ */
 module.exports = async (dir, tagMap) => {
+  try {
+    const questionInfoPath = path.join(dir, 'info.json');
+    const questionInfo = await fs.readJson(questionInfoPath);
+    if (!questionInfo.type || questionInfo.type !== 'v3') {
+      // We can skip this question; we only want to convert v3 questions
+      return false;
+    }
+  } catch (e) {
+    console.log(`Skipping ${dir} (no info.json found)`);
+    return false;
+  }
+
   const questionPath = path.join(dir, 'question.html');
   if (!(await fs.pathExists(questionPath))) {
-    console.log(`Skipping ${dir}`);
-    return;
+    console.log(`Skipping ${dir} (no question.html found)`);
+    return false;
   }
 
   const contents = await fs.readFile(questionPath, 'utf8');
@@ -44,4 +59,5 @@ module.exports = async (dir, tagMap) => {
   await fs.writeFile(questionPath, domSerializer(dom));
 
   console.log(`Successfully converted ${questionPath}`);
+  return true;
 }

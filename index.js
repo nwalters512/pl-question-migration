@@ -50,7 +50,7 @@ const getTagMapForCourse = async (courseDir) => {
       }
     }
   } catch (e) {
-    console.log('Error reading course element directory; skipping', e);
+    console.log('Could not read course element directory; skipping');
   }
   return newTagMap;
 }
@@ -117,13 +117,20 @@ if (args.course) {
       return;
     }
 
+    let successCount = 0;
+    let errorCount = 0;
+
     for (let i = 0; i < questions.length; i++) {
       const questionPath = path.join(questionsPath, questions[i]);
       try {
-        await convertQuestion(questionPath, courseTagMap);
+        const converted = await convertQuestion(questionPath, courseTagMap);
+        if (converted) successCount++;
       } catch (e) {
-        console.error(`Error converting ${questionPath}`, e)
+        console.error(`Error converting ${questionPath}`, e);
+        errorCount++;
       }
     }
+
+    console.log(`Out of ${questions.length} questions, ${successCount} were migrated successfully and ${errorCount} errored.`)
   })();
 }
