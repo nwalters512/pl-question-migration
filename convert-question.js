@@ -8,6 +8,11 @@ const replaceTags = (node, tagMap) => {
   if (node.type === 'tag') {
     if (node.name in tagMap) {
       node.name = tagMap[node.name]
+      node.attribs = Object.keys(node.attribs).reduce((acc, curr) => {
+        const newName= curr.replace(/_/g, '-');
+        acc[newName] = node.attribs[curr];
+        return acc;
+      }, {});
     }
   }
   if (node.children) {
