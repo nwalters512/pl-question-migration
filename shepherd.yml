@@ -1,0 +1,10 @@
+id: question-renderer-migration
+title: Migrate to new question renderer
+adapter:
+  type: github
+  search_query: org:PrairieLearn path:/ filename:infoCourse.json uuid
+
+hooks:
+  apply: node $SHEPHERD_MIGRATION_DIR/index.js --course $SHEPHERD_REPO_DIR
+  pr_message: $SHEPHERD_MIGRATION_DIR/pr_message.sh
+
