@@ -3,6 +3,7 @@
 const fs = require('fs-extra');
 const path = require('path');
 const { filterAsync } = require('node-filter-async');
+const detectIndent = require('detect-json-indent');
 
 const convertQuestion = require('./convert-question');
 
@@ -72,6 +73,23 @@ const getQuestionsForCourse = async (courseDir) => {
   });
 }
 
+const enableNewQuestionRenderer = async (courseDir) => {
+  const infoCourseJsonPath = path.join(courseDir, 'infoCourse.json');
+  const infoCourseRaw = await fs.readFile(infoCourseJsonPath, 'utf8');
+  const indent = detectIndent(infoCourseRaw);
+  const infoCourse = JSON.parse(infoCourseRaw);
+  if (infoCourse.options && infoCourse.options.useNewQuestionRenderer) {
+    // Already enabled
+    return false;
+  }
+  infoCourse.options = infoCourse.options || {};
+  infoCourse.options.useNewQuestionRenderer = true;
+  await fs.writeJSON(infoCourseJsonPath, infoCourse, {
+    spaces: indent,
+  });
+  return true;
+}
+
 
 const args = require('yargs')
   .version(false)
@@ -105,34 +123,46 @@ if (args.question) {
 if (args.course) {
   // We have an entire course to convert
   (async () => {
-    // First, let's determine if a course has forked any of our elements
-    // into their own course. If they have, we shouldn't convert that tag for
-    // them
-    const courseTagMap = await getTagMapForCourse(args.course);
-
-    const questionsPath = path.join(args.course, 'questions');
-    let questions;
     try {
-      questions = await getQuestionsForCourse(args.course);
-    } catch (e) {
-      console.error(`Error reading ${questionDirs}`, e);
-      return;
-    }
+      // First, let's determine if a course has forked any of our elements
+      // into their own course. If they have, we shouldn't convert that tag for
+      // them
+      const courseTagMap = await getTagMapForCourse(args.course);
 
-    let successCount = 0;
-    let errorCount = 0;
-
-    for (let i = 0; i < questions.length; i++) {
-      const questionPath = path.join(questionsPath, questions[i]);
+      const questionsPath = path.join(args.course, 'questions');
+      let questions;
       try {
-        const converted = await convertQuestion(questionPath, courseTagMap);
-        if (converted) successCount++;
+        questions = await getQuestionsForCourse(args.course);
       } catch (e) {
-        console.error(`Error converting ${questionPath}`, e);
-        errorCount++;
+        console.error(`Error reading ${questionDirs}`, e);
+        return;
       }
-    }
 
-    console.log(`Out of ${questions.length} questions, ${successCount} were migrated successfully and ${errorCount} errored.`)
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (let i = 0; i < questions.length; i++) {
+        const questionPath = path.join(questionsPath, questions[i]);
+        try {
+          const converted = await convertQuestion(questionPath, courseTagMap);
+          if (converted) successCount++;
+        } catch (e) {
+          console.error(`Error converting ${questionPath}`, e);
+          errorCount++;
+        }
+      }
+
+      const enabledRenderer = await enableNewQuestionRenderer(args.course);
+      if (enabledRenderer) {
+        console.log('Enabled new question renderer in infoCourse.json');
+      }
+
+      console.log(`Out of ${questions.length} questions, ${successCount} were migrated and ${errorCount} errored.`);
+
+      process.exit(errorCount > 0 ? 1 : 0);
+    } catch (e) {
+      console.error(e);
+      process.exit(1);
+    }
   })();
 }
